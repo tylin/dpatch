@@ -330,7 +330,7 @@ while((ds.batch.nextClust<=numel(ds.selectedClust)||size(ds.batch.round.posFeatu
     alpha = 0.71;
     if(~dsfield(ds,'batch','round','mineddetectors'))
       dsdelete('ds.batch.round.negmin');
-      while(currentInd<=maxElements)    % negative mining in while loop for training classifier
+      while(currentInd<=maxElements)    % negative mining in while loop
         imgsPerIter = floor(startImgsPerIter * 2^((iter - 1)*alpha));
         finInd = min(currentInd + imgsPerIter - 1, maxElements);
         {'ds.batch.round.negmin.iminds','allnegs(currentInd:finInd)'};dsup;
@@ -398,7 +398,7 @@ while((ds.batch.nextClust<=numel(ds.selectedClust)||size(ds.batch.round.posFeatu
     dsmv('ds.bestbin_topn','ds.bestbin');  
     prepbatchwisebestbin(dispdets,j+2,100,[1:10 15:7:100]);
     dispres_discpatch;
-    dsmv('ds.bestbin','ds.bestbin_topn');   % save current images
+    dsmv('ds.bestbin','ds.bestbin_topn');
     dssave;
     ds.bestbin_topn.alldiscpatchimg=cell(size(ds.bestbin_topn.alldiscpatchimg));
 
