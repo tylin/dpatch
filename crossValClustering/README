@@ -1,0 +1,9 @@
+Majority of the code in this folder has been re-used/adapted from the codebase
+for the following paper on Discriminative Patches. We would refer the reader to
+the project website of this publication for the latest release.
+
+S. Singh, A. Gupta and A. A. Efros. 2012. Unsupervised discovery of mid-level
+discriminative patches. arXiv:1205.3137 [cs.CV]. (ECCV 2012)
+
+Project website: http://graphics.cs.cmu.edu/projects/discriminativePatches/
+

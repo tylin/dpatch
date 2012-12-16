@@ -1,0 +1,30 @@
+% Author: Carl Doersch (cdoersch at cs dot cmu dot edu)
+function res=dsstringmatch(pattern,str)
+  toks=regexp(pattern,'*','split');
+  %keyboard;
+  if(numel(toks)==1)
+    res=mystrcmp(pattern,str);
+    return;
+  end
+  for(i=1:numel(toks))
+    lastwasempty=0;
+    %keyboard;
+    if(mystrcmp(toks{i},''))
+      lastwasempty=1;
+      continue;
+    end
+    idx=strfind(str,toks{i});
+    if(numel(idx)<1)
+      res=0;
+      return;
+    else
+      str=str((idx+numel(toks{i})):end);
+    end
+  end
+  if(isempty(str)||lastwasempty)
+    res=1;
+  else
+    res=0;
+  end
+  return;
+end

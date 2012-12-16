@@ -1,0 +1,48 @@
+//dsdelete('*') apparently removes the distproc directory; dsloadsavestate reads the sys directory
+
+dsinterrupt doesn't handle not-yet-active processors
+
+dsmapredclose often doesnt close everything, esp when dsmapreduce is already running. possibly dsmapredclose issues an interrupt, but sometimes the interrupt commands get read and then the exit is written before the master's delete command.
+
+//dssave is slow when checking large arrays that are already completely saved
+
+...'pid' file is written to the code directory
+
+unable to do loadsavestate->load on an empty cell array
+
+//dsup when replacing an entire cell array creates a [] stump in the savestate, which causes errors later
+
+chmod doesn't happen sometimes--esp. when creating the bestbin symlinks and when a struct containing a result cell array of a dsmapreduce doesn't exist when the dsmapreduce is called
+
+//dsmapreduce doesn't work with map variables that are only persisted
+
+//dsmapreducers should send their resulting savestate back to the master, and write their progress to a file parallel to the main communication ones.
+optimize dsmapreducer to communicate back when variables are completed.  have dsmapreduce load these variables as they are output.
+
+dsclear doesn't handle clearing parents of currpath
+
+issue an error when a dsmapreduce client creates a reduce variable that's not a cell
+
+//dsmapreduce doesn't handle being cd'd into a place except the root
+
+dsdelete doesn't handle symlinks--it needs to recurse down and find them.
+
+dsmapreducer errors on load/save outside function execution shouldn't let the dsworker end up in a hanging state.
+
+clear memory from dsmapreducer when it errors out
+
+dsmapreduce does not handle 2-d reduce variables
+
+allow a per-reduce-var noloadresults
+
+dsup doesn't handle subscripted assignments.  neither does dsclear handle subscripted clears.
+
+dsmapredopen shouldn't reassign mapreducer id's if it's not sure they've exited.
+
+dssymlink with a cell array gets the target wrong; leaves off the brackets because it uses the variable name instead of the disk name.
+
+//empty cells written in a dsmapreduce job look the same as an ordinary variable to handlewritten
+
+interrupts written to processors that haven't started cause them to exit
+
+dswork doesn't clear variables that are written

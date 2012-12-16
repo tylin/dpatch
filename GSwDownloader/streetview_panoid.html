@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+  This file is based on code by Petr Gronat, Michal Havlena, and Jan Knopp,
+  and significantly edited by Carl Doersch (cdoersch at cs dot cmu dot edu)
+
+  More information on the general technique can be found in:
+  GRONAT, P., HAVLENA , M., SIVIC , J., AND PAJDLA , T. 2011.
+  Building streetview datasets for place recognition and city reconstruction. 
+  Tech. Rep. CTU–CMP–2011–16, Czech Tech Univ.
+
+  Carl admits that he knows almost nothing about how to structure
+  javascript code, that the code was not well formatted to begin with, 
+  and that this file is a mess.  However, it should "just
+  work" with no input, assuming you're in chrome and have Flash installed.
+  And that the streetview API hasn't changed.  Best of luck to you.
+
+  It should output to the screen the files mapping.txt and download.txt.
+  See the README in the parent directory for info on what to do with that.
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Google Maps JavaScript API Example: Street View PanoId Getter</title>
+    <!--<script src="http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=ABQIAAAAzr2EBOXUKnm_jVnk0OJI7xSosDVG8KKPE1-m51RBrvYughuyMxQ-i1QfUnH94QxWIa6N4U6MouMmBA" type="text/javascript"></script>-->
+    <script src="http://maps.googleapis.com/maps/api/js?sensor=false" type="text/javascript"></script>
+    <script type="text/javascript"> 
+
+    var numid;
+    var hashtable;
+    //var ofile;
+    //var mfile;
+    var panoClient;
+    var map;
+    var nextPanoId;
+    var npanos=0;
+    var nextLatLng;
+    var startLatLng;
+    var cityidx=0;
+    var nskips=0;
+    var citynames=['paris','sanfransisco','boston','nyc','philadelphia','london','prague','barcelona','milan','mexicocity','saopaulo','tokyo'];
+    var citylat=[48.854766,37.774989,42.358576,40.714281,39.953545,51.499811,50.087942,41.387863,45.464315,19.426712,-23.548677,35.689684]
+    var citylng=[2.350913,-122.419324,-71.059999,-74.006181,-75.163284,-0.126179,14.420351,2.169775,9.187188,-99.127364,-46.638299,139.692302]
+    //var citynames=['taipei','rome','berlin','bucharest','chicago','melbourne'];
+    //var citylat=[25.011098,41.899827,52.523454,44.435835,41.882088,-37.813633]
+    //var citylng=[121.445786,12.499975,13.406796,26.110868,-87.627662,144.96295]
+//    var citynames=['marseille','lyon','tolouse','nice'];
+//    var citylat=[43.2961,45.764039,43.60448,43.699611]
+//    var citylng=[5.369955,4.835813,1.444266,7.265155]
+//    var citynames=['rouen'];
+//    var citylat=[49.441867]
+//    var citylng=[1.093011]
+//    var citynames=['paris','nyc'];
+//    var citylat=[48.854766,40.714281]
+//    var citylng=[2.350913,-74.006181]
+//    var citynames=['nyc'];
+//    var citylat=[40.714281]
+//    var citylng=[-74.006181]
+//    var citynames=['london','prague','tokyo'];
+//    var citylat=[51.499811,50.087942,35.689684]
+//    var citylng=[-0.126179,14.420351,139.692302]
+
+    function getkey(key_str) {
+      if(window.location.search) {
+        var query = window.location.search.substr(1);
+        var pairs = query.split(/&|;/);
+        for(var i = 0; i < pairs.length; i++) {
+          var pair = pairs[i].split("=");
+          if(unescape(pair[0]) == key_str) return unescape(pair[1]);
+        }
+      }
+    }
+
+    function fakefilewrite(filenm,str){
+        filediv=document.getElementById(filenm);
+        if(filenm=="glog"){
+          filediv.innerHTML=str+'<br/>'+filediv.innerHTML;
+
+        }else{
+          filediv.innerHTML=filediv.innerHTML+str+'<br/>';
+        }
+        
+    }
+
+    function randlatlong(){
+        radiuslat=.012;
+        //to download suburbs, use this as the outer radius
+        //radiuslat=.4;
+        //to download suburbs, uncomment the loop and the test.
+        //while(true){
+        radiuslng=radiuslat/Math.cos(startLatLng.lat()*Math.PI/180);
+        nextlat=startLatLng.lat()+Math.random()*2*radiuslat-radiuslat;
+        nextlng=startLatLng.lng()+Math.random()*2*radiuslng-radiuslng;
+        //  if(nextlat>radiuslat*(3/4) || nextlat>-radiuslat*(3/4) || nextlng>radiuslng*(3/4) || nextlng>-radiuslng*(3/4)){
+        //    break;
+        //  }
+        //}
+        
+        nextlat=Math.round(nextlat*1000000)/1000000;
+        nextlng=Math.round(nextlng*1000000)/1000000;
+        
+        return new google.maps.LatLng(nextlat,nextlng);
+    }
+
+    function initialize() {
+      startLatLng = new google.maps.LatLng(citylat[cityidx],citylng[cityidx]);
+      //var fso = new ActiveXObject("Scripting.FileSystemObject");
+
+      numid = 0;
+      hashtable = {};
+      //ofile = fso.CreateTextFile("C:\\download.txt", true);
+      //mfile = fso.CreateTextFile("C:\\mapping.txt", true);
+     panoClient = new google.maps.StreetViewService();      
+     var myOptions = {
+          center: new google.maps.LatLng(40.443436,-79.944615),
+          zoom: 15,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        }; 
+      map = new google.maps.Map(document.getElementById("map_canvas"),myOptions);
+      map.setCenter(startLatLng, 15);
+
+//    GEvent.addListener(map, "click", function(overlay,latlng) { panoClient.getNearestPanorama(latlng, showPanoData); });
+      nextLatLng = randlatlong();
+      //fakefilewrite('tmp',nextLatLng);
+      //fakefilewrite('tmp',startLatLng.lng()*.00001);
+      fakefilewrite('mfile',citynames[cityidx]);
+      //fakefilewrite('ofile',citynames[cityidx]);
+      panoClient.getPanoramaByLocation(nextLatLng, 49, showPanoData);
+    }
+
+    function isMember(panoId) {
+      var level = 0;
+      var current = hashtable[panoId.charAt(level++)];
+      while ((current != null) && (level < panoId.length)) {
+        current = current[panoId.charAt(level++)];
+      }
+      return (current != null);
+    }
+
+    function insert(panoId) {
+      var level = 0;
+      var currentold = hashtable;
+      var current = currentold[panoId.charAt(level++)];
+      while ((current != null) && (level < panoId.length)) {
+        currentold = current;
+        current = currentold[panoId.charAt(level++)];
+      }
+      if (current == null) {
+        level--;
+        while (level < panoId.length) {
+          currentold[panoId.charAt(level)] = {};
+          currentold = currentold[panoId.charAt(level++)];
+        }
+      }
+    }
+
+    function showPanoData(panoData,gstatus) {
+      if (gstatus != "OK") {
+        fakefilewrite('glog', 'showPanoData: Server rejected with code: ' + gstatus);
+        nextLatLng = randlatlong();
+        setTimeout("panoClient.getPanoramaByLocation(nextLatLng, 49, showPanoData);", 100);
+        return;
+      }
+
+//      insert(panoData.location.panoId);
+//      var i=0;
+      //for (i=0; i<panoData.links.length; i++) {
+      if (!isMember(panoData.location.pano)) {
+          insert(panoData.location.pano);
+          map.setCenter(nextLatLng, 15);
+
+          var displayString = [
+	        "Panorama ID: " + panoData.location.pano,
+	        "LatLng: " + panoData.location.latLng,
+	        "Copyright: " + panoData.copyright,
+	        "Description: " + panoData.location.description,
+	        "#Links: " + panoData.links.length
+          ].join("<br/>");
+
+    //    map.openInfoWindowHtml(panoData.location.latlng, displayString);
+          fakefilewrite('glog','Viewer moved to ' + panoData.location.latLng);
+
+          var saveDataString = [panoData.location.pano + "\t" + panoData.location.latLng + "\r\n"];
+          fakefilewrite('ofile',saveDataString);
+          //ofile.Write(saveDataString);
+
+          var yawidx=0;
+          for (yawidx=0; yawidx<2; yawidx++) {
+                var yaw = yawidx*360/2+90;
+                var shiftyaw = (360 /*- parseFloat(panoData.Projection.pano_yaw_deg)*/ + yaw) % 360;
+                var pitchidx=0;
+                for (pitchidx=0; pitchidx<1; pitchidx++) {
+                      var pitch = "-004";
+                      if (pitchidx == 1) pitch = "-028";
+                      var saveDataString = [(numid)+ " " + Math.round(shiftyaw*Math.pow(10,4))/Math.pow(10,4) + " " + Math.round(pitch*Math.pow(10,4))/Math.pow(10,4) + " " + panoData.location.latLng.lat() + "_" + panoData.location.latLng.lng() + "_" + Math.round(yaw*Math.pow(10,4))/Math.pow(10,4) + "_" + pitch + ".JPG\r\n" + " " + citynames[cityidx] ]; 
+                      fakefilewrite('mfile',saveDataString);
+                      //mfile.Write(saveDataString);
+                }
+	      }
+	      numid++;
+          npanos++;
+        }else{
+          nskips=nskips+1;
+        }
+        document.getElementById('skips').innerHTML=""+nskips;
+        if ((npanos >= 7500&&cityidx==0)||(npanos>=750&&cityidx>0)) {
+            cityidx++;
+            if(cityidx>=citynames.length){
+                return;
+            }
+            npanos=0;
+            startLatLng = new google.maps.LatLng(citylat[cityidx],citylng[cityidx]);
+            //fakefilewrite('mfile',citynames[cityidx]);
+            //fakefilewrite('ofile',citynames[cityidx]);
+        }
+        nextLatLng = randlatlong();
+        setTimeout("panoClient.getPanoramaByLocation(nextLatLng, 49, showPanoData);", 100);
+
+    }
+    
+
+    function destroy() {
+      //mfile.Close();
+      //ofile.Close();
+      //GUnload();
+    }
+    
+    function handleNoFlash(errorCode) {
+      if (errorCode == 603) {
+        alert("Error: Flash doesn't appear to be supported by your browser");
+        return;
+      }
+    }
+    </script>
+  </head>
+
+  <body onload="initialize()" onunload="destroy()">
+    <div id="map_canvas" style="width: 800px; height: 550px"></div>
+    <div id="glog" style="width:800px;height:300px;overflow:scroll"></div>
+    <div id="tmp"></div>
+    <div id="skips"></div>
+    <div id="mfile">mapping.txt:<br/></div>
+    <div id="ofile">download.txt:<br/></div>
+  </body>
+
+</html>

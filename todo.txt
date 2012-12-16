@@ -1,0 +1,5 @@
+% TODO for dpatch code:
+- how do i make this run so that i only discover one cluster??
+- what is the mapreduce thing about? will i be able to make it use the cluster later?
+- where is the part that does the classification at the end with the dpatches as features?
+- did they already try this with the 15 scene code??
